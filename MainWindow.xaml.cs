@@ -2,60 +2,63 @@
 using System.Text.Json;
 using System.IO;
 using Path = System.IO.Path;
+using System;
+using Telegram.Bot.Types;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
 
 namespace _10WPF_TelegramBot
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : Window
+    /// <summary>
+    /// Класс глав. окна (точка входа StartupUri="MainWindow.xaml").
+	/// В конструкторе инициализ. объект типа TelegamMessageClient для взаимод. с API бота, и 
+	/// инициализ. ItemsSource у эл-та управл. MessageListBox глав окна
+    /// </summary>
+    public partial class MainWindow : Window
 	{
-		TelegamMessageClient telegamMessageClient;
-		string messagesHistoryPath = "MessagesHistory.txt";
+        readonly TelegamMessageClient telegamMessageClient = new();
+        readonly string messagesHistoryPath = "MessagesHistory.txt";
 		public MainWindow()
 		{
 			InitializeComponent();
-			telegamMessageClient = new TelegamMessageClient(this);
-
-			// у элемента управления MessageListBox окна MainWindow
-			// по свойству ItemsSource идет ссылка на источник данных 
-			// на свойство типа ObservableCollection<MessageLog>,
-			// после чего в XAML можно привязать к конкретным свойствам MessageLog
-			MessageListBox.ItemsSource = telegamMessageClient.BotMessageLog;
+            MessageListBox.ItemsSource = telegamMessageClient.BotMessageLog;
 		}
 
-
-		/// <summary>
-		/// Метод позволяет отправить сообщение пользователю UserIDforSendingMessage
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		void SentButton_Click(object sender, RoutedEventArgs e)
+        //Метод для отправки пользователю (скрытый TextBlock с именем UserIDforSendingMessage)
+		//текста сообщения (TextBox с именем SentMessageText)
+        void SentButton_Click(object sender, RoutedEventArgs e)
 		{
-			telegamMessageClient.SendMessage(UserIDforSendingMessage.Text, SentMessageText.Text);
-			SentMessageText.Clear();
-		}
+			var selectedMessageLog = MessageListBox.SelectedItem;
 
-		/// <summary>
-		/// Метод позволяет открыть окно "Файлы" из меню приложения
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void FilesMenu_Click(object sender, RoutedEventArgs e)
+			if (selectedMessageLog is not null)
+			{
+                var firstNameSelectedMessageLog = ((MessageLog)selectedMessageLog).FirstName;
+                telegamMessageClient.SendMessage(UserIDforSendingMessage.Text, firstNameSelectedMessageLog, SentMessageText.Text);
+                SentMessageText.Clear();
+            }
+            else
+            {
+                MessageBox.Show(
+                    "Сообщение не отправлено. Не выбран пользователь, которому отправлять сообщение",
+                    "Предупреждение",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+		//Метод для открытия диалог. окна "Файлы" из меню (список скаченных файлов в виде текста)
+		void FilesMenu_Click(object sender, RoutedEventArgs e)
 		{
 			var filesWindow = new FilesWindow
 			{
-				DataContext = telegamMessageClient.listFiles
+				DataContext = telegamMessageClient.ListFiles
 			};
 			filesWindow.Show();			
 		}
 
-		/// <summary>
-		/// Метод позволяет открыть окно "Курс валют" из меню приложения
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void CurrenciesMenu_Click(object sender, RoutedEventArgs e)
+		//Метод для открытия диалог. окна "Курс валют" из меню (в виде таблицы наименование - значение, руб.)
+		void CurrenciesMenu_Click(object sender, RoutedEventArgs e)
 		{
 			var currenciesWindow = new CurrenciesWindow
 			{
@@ -64,17 +67,14 @@ namespace _10WPF_TelegramBot
 			currenciesWindow.ShowDialog();
 		}
 
-		/// <summary>
-		/// Метод позволяет экспортировать историю сообщений в JSON в текстовый файл
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void MessagesHistory_Click(object sender, RoutedEventArgs e)
+        //Метод для экспорта истории сообщений в JSON в "MessagesHistory.txt" (в папке проекта)
+        async void MessagesHistory_Click(object sender, RoutedEventArgs e)
 		{
 			if (telegamMessageClient.BotMessageLog.Count > 0)
 			{
-				var jsonMessageHistoryString = JsonSerializer.Serialize(telegamMessageClient.BotMessageLog);
-				File.AppendAllText(messagesHistoryPath, jsonMessageHistoryString);
+                var options = new JsonSerializerOptions { WriteIndented = true };
+				var jsonMessageHistoryString = JsonSerializer.Serialize(telegamMessageClient.BotMessageLog, options);
+				await System.IO.File.WriteAllTextAsync(messagesHistoryPath, jsonMessageHistoryString, encoding: Encoding.UTF8);
 			}
 			else
 				MessageBox.Show(
@@ -84,16 +84,13 @@ namespace _10WPF_TelegramBot
 					MessageBoxImage.Warning);
 
 		}
-		/// <summary>
-		/// Метод позволяет открыть текстовый файл истории сообщения по клику из меню приложения
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>		
-		private void OpenHistory_Click(object sender, RoutedEventArgs e)
+
+        //Метод для открытия файла истории сообщения "MessagesHistory.txt" по клику из меню
+        void OpenHistory_Click(object sender, RoutedEventArgs e)
 		{
-			if (File.Exists(messagesHistoryPath))
+			if (System.IO.File.Exists(messagesHistoryPath))
 			{
-				System.Diagnostics.Process txtFileOpening = new System.Diagnostics.Process();
+				System.Diagnostics.Process txtFileOpening = new();
 				txtFileOpening.StartInfo.FileName = "notepad.exe";
 				string messagesHistoryTxtFilePath = Path.Combine(Directory.GetCurrentDirectory(), messagesHistoryPath);
 				txtFileOpening.StartInfo.Arguments = messagesHistoryTxtFilePath;

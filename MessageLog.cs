@@ -1,5 +1,8 @@
 ﻿namespace _10WPF_TelegramBot
 {
+	/// <summary>
+	/// Класс, представляющий сообщение в чат-боте
+	/// </summary>
 	class MessageLog
 	{
 		public long Id { get; set; }

@@ -3,7 +3,7 @@
 namespace _10WPF_TelegramBot
 {
 	/// <summary>
-	/// Логика взаимодействия для FilesWindow.xaml
+	/// Класс диалог. окна со списком скаченных файлов
 	/// </summary>
 	public partial class FilesWindow : Window
 	{
