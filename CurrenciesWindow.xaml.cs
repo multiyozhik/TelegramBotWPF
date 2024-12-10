@@ -3,7 +3,7 @@
 namespace _10WPF_TelegramBot
 {
 	/// <summary>
-	/// Логика взаимодействия для CurrenciesWindow.xaml
+	/// Класс для диалог. окна (таблица с колонками наименование и курс валююты, руб.)
 	/// </summary>
 	public partial class CurrenciesWindow : Window
 	{

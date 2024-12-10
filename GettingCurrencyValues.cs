@@ -1,40 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 
 namespace _10WPF_TelegramBot
 {
-	static class GettingCurrencyValues
-	{
-		record CurrencyInfo(string Code, string Name);
-		static readonly CurrencyInfo[] currencies = new CurrencyInfo[] 
-		{
-			new ("EUR","Евро"), 
-			new ("USD","Доллар США"),
-			new ("GBP","Фунт стерлингов Великобритании"),
-			new ("JPY", "Японская йена"),
-			new ("BYN", "Белорусский рубль"),
-			new ("CNY", "Юань"),
-			new ("HRK", "Хорватская куна")
-		};
-		
+    /// <summary>
+    /// Статический класс для получ. из сайта ЦБ РФ курса валют 
+    /// Метод возвр. List<Currency> (наименование и значение, руб.)
+    /// </summary>
+    static class GettingCurrencyValues
+	{		
 		static public List<Currency> GetCurrencyValues()
-		{			
-			var urlRecourceCurrencies = $@"https://cdn.cur.su/api/latest.json";
-			var webClient = new WebClient();
-			var jsonString = webClient.DownloadString(urlRecourceCurrencies);
-			var currenciesJson = JsonSerializer.Deserialize<CurrenciesJson>(jsonString);
-			var ratesDictionary = currenciesJson.rates; 														// 			
-			var rateRUB = ratesDictionary["RUB"];
-			var currenciesDataGrid = new List<Currency>();
-			foreach (var item in currencies)
-			{			
-				// выполняется конвертация для вывода курса валюты в рублях
-				var newCurrencyItem = new Currency(item.Name, rateRUB / ratesDictionary[item.Code]);
-				currenciesDataGrid.Add(newCurrencyItem);
-
-			}			
-			return currenciesDataGrid;
-		}
-	}
+		{
+            var urlRecourceCurrencies = $@"https://www.cbr-xml-daily.ru/daily_json.js";
+			var jsonString = new WebClient().DownloadString(urlRecourceCurrencies);
+			var currenciesDTO = JsonSerializer.Deserialize<CurrenciesDTO>(jsonString);
+            return currenciesDTO
+				.Valute.Values
+				.Select(item => new Currency(item.Name, item.Value))
+				.ToList();
+            //у Dictionary Valute берем значения словаря Values и по ним (объекты типа ValuteDTO) пробегаем
+        }
+    }
 }

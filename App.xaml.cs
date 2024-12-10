@@ -2,11 +2,13 @@
 using System.Windows;
 using System.Globalization;
 using System.Windows.Markup;
+using System.Runtime.CompilerServices;
 
 namespace _10WPF_TelegramBot
 {
 	/// <summary>
-	/// Interaction logic for App.xaml
+	/// Глобальная установка локали при запуске приложения 
+	/// (для корректного получения числовых данных с сайта через точку)
 	/// </summary>
 	public partial class App : Application
 	{
